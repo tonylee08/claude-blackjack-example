@@ -354,7 +354,7 @@ class BlackjackGame:
                 
                 actions = ['hit', 'stand']
                 
-                if first_action or len(self.player_hands) == 1:
+                if first_action and not hand.is_split_hand:
                     actions.append('surrender')
                 
                 if hand.can_double and self.player_money >= hand.bet:

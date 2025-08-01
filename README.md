@@ -5,7 +5,7 @@ A command-line implementation of the classic Blackjack card game written in Pyth
 ## Features
 
 - **Standard Blackjack Rules**: Get as close to 21 as possible without going over
-- **Dealer Hits on Soft 17**: Dealer must hit when holding a soft 17 (e.g., Ace + 2 + 4)
+- **Dealer Hits on Soft 17**: Dealer must hit when holding a soft 17 (e.g., Ace + 6)
 - **Advanced Player Options**:
   - Hit, Stand, Double Down
   - Split pairs
@@ -42,14 +42,14 @@ python blackjack.py
 - **Hit**: Take another card
 - **Stand**: Keep your current hand
 - **Double Down**: Double your bet and receive exactly one more card
-- **Split**: If you have a pair, split into two separate hands (requires additional bet)
-- **Surrender**: Forfeit half your bet and end the hand (first action only)
-- **Insurance**: Side bet when dealer shows Ace (pays 2:1 if dealer has blackjack)
+- **Split**: If you have a pair or any two 10-value cards (10, J, Q, K), split into two separate hands (requires additional bet)
+- **Surrender**: Forfeit half your bet and end the hand (only available as the first action of each hand, not allowed after splitting)
+- **Insurance**: Side bet equal to half your original bet when dealer shows Ace (pays 2:1 if dealer has blackjack)
 
 ### Dealer Rules
 
 - Dealer hits on 16 or lower
-- Dealer hits on soft 17 (e.g., Ace + 2 + 4)
+- Dealer hits on soft 17 (e.g., Ace + 6)
 - Dealer stands on hard 17 or higher
 
 ### Winning Conditions
