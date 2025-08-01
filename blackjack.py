@@ -70,6 +70,24 @@ class Hand:
     def is_bust(self):
         return self.get_value() > 21
     
+    def is_soft_17(self):
+        if self.get_value() != 17:
+            return False
+        
+        # Check if we have at least one Ace counted as 11
+        value = 0
+        aces = 0
+        
+        for card in self.cards:
+            if card.rank == 'A':
+                aces += 1
+                value += 11
+            else:
+                value += card.get_value()
+        
+        # If we have aces and our current value is 17, check if any ace is being counted as 11
+        return aces > 0 and value >= 17
+    
     def can_split(self):
         return (len(self.cards) == 2 and 
                 self.cards[0].get_value() == self.cards[1].get_value() and
@@ -264,7 +282,7 @@ class BlackjackGame:
     def dealer_turn(self):
         print(f"\nDealer reveals hidden card: {self.dealer_hand}")
         
-        while self.dealer_hand.get_value() < 17:
+        while self.dealer_hand.get_value() < 17 or self.dealer_hand.is_soft_17():
             card = self.deck.deal_card()
             self.dealer_hand.add_card(card)
             print(f"Dealer draws: {card}")
