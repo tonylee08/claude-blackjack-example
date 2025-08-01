@@ -5,7 +5,7 @@ A command-line implementation of the classic Blackjack card game written in Pyth
 ## Features
 
 - **Standard Blackjack Rules**: Get as close to 21 as possible without going over
-- **Dealer Hits on Soft 17**: Dealer must hit when holding a soft 17 (Ace + 6)
+- **Dealer Hits on Soft 17**: Dealer must hit when holding a soft 17 (e.g., Ace + 2 + 4)
 - **Advanced Player Options**:
   - Hit, Stand, Double Down
   - Split pairs
@@ -49,7 +49,7 @@ python blackjack.py
 ### Dealer Rules
 
 - Dealer hits on 16 or lower
-- Dealer hits on soft 17 (Ace + 6)
+- Dealer hits on soft 17 (e.g., Ace + 2 + 4)
 - Dealer stands on hard 17 or higher
 
 ### Winning Conditions
@@ -68,4 +68,4 @@ python blackjack.py
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is open source and available under the Apache-2.0 License.
