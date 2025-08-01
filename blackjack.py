@@ -89,9 +89,16 @@ class Hand:
         return aces > 0 and value >= 17
     
     def can_split(self):
-        return (len(self.cards) == 2 and 
-                self.cards[0].get_value() == self.cards[1].get_value() and
-                not self.is_split_hand)
+        if len(self.cards) != 2:
+            return False
+        
+        # Allow splitting pairs of same rank (e.g., A-A, 8-8)
+        if self.cards[0].rank == self.cards[1].rank:
+            return True
+        
+        # Allow splitting any 10-value cards (10, J, Q, K)
+        return (self.cards[0].get_value() == 10 and 
+                self.cards[1].get_value() == 10)
     
     def __str__(self):
         return ', '.join(str(card) for card in self.cards) + f" (Value: {self.get_value()})"
@@ -134,11 +141,14 @@ class PlayerActions:
         self.game.player_money -= additional_bet
         new_hand = Hand()
         
-        new_hand.add_card(original_hand.cards.pop())
+        # Move the second card to the new hand
+        second_card = original_hand.cards.pop(1)
+        new_hand.add_card(second_card)
         new_hand.bet = original_hand.bet
         new_hand.is_split_hand = True
         original_hand.is_split_hand = True
         
+        # Deal one new card to each hand automatically
         original_hand.add_card(self.game.deck.deal_card())
         new_hand.add_card(self.game.deck.deal_card())
         
@@ -155,9 +165,9 @@ class PlayerActions:
         
         choice = input("Surrender (forfeit half your bet)? (y/n): ").lower().strip()
         if choice == 'y':
-            surrender_loss = hand.bet // 2
-            print(f"Hand surrendered. Loss: ${surrender_loss}")
-            self.game.player_money -= surrender_loss
+            surrender_return = hand.bet // 2
+            print(f"Hand surrendered. Loss: ${hand.bet - surrender_return}")
+            self.game.player_money += surrender_return
             hand.is_surrendered = True
             return True
         return False
@@ -172,7 +182,7 @@ class DealerActions:
     def play_turn(self):
         self.reveal_card()
         
-        while self.game.dealer_hand.get_value() < 17 or self.game.dealer_hand.is_soft_17():
+        while self.game.dealer_hand.get_value() < 17 or (self.game.dealer_hand.get_value() == 17 and self.game.dealer_hand.is_soft_17()):
             card = self.game.deck.deal_card()
             self.game.dealer_hand.add_card(card)
             print(f"Dealer draws: {card}")
@@ -257,36 +267,36 @@ class GameFlow:
             
             elif hand.is_bust():
                 print(f"{hand_num}Player busts - Dealer wins! Loss: ${hand.bet}")
-                total_winnings -= hand.bet
+                # Player loses their bet (already deducted when placed)
             
             elif hand.is_blackjack() and not dealer_blackjack:
                 winnings = int(hand.bet * 1.5)
                 print(f"{hand_num}Player BLACKJACK! Win: ${winnings}")
+                self.game.player_money += hand.bet + winnings  # Return bet + blackjack bonus
                 total_winnings += winnings
             
             elif dealer_bust:
                 print(f"{hand_num}Dealer busts - Player wins! Win: ${hand.bet}")
+                self.game.player_money += hand.bet * 2  # Return bet + equal winnings
                 total_winnings += hand.bet
             
             elif hand.get_value() > dealer_value:
                 print(f"{hand_num}Player wins! Win: ${hand.bet}")
+                self.game.player_money += hand.bet * 2  # Return bet + equal winnings
                 total_winnings += hand.bet
             
             elif hand.get_value() < dealer_value:
                 print(f"{hand_num}Dealer wins! Loss: ${hand.bet}")
-                total_winnings -= hand.bet
+                # Player loses their bet (already deducted when placed)
             
             else:
                 print(f"{hand_num}Push (tie)! Bet returned.")
-        
-        self.game.player_money += total_winnings
+                self.game.player_money += hand.bet  # Return bet only
         
         if total_winnings > 0:
             print(f"\nTotal winnings: ${total_winnings}")
         elif total_winnings < 0:
             print(f"\nTotal losses: ${abs(total_winnings)}")
-        else:
-            print(f"\nNo money gained or lost.")
         
         print(f"Your money: ${self.game.player_money}")
 
@@ -344,7 +354,7 @@ class BlackjackGame:
                 
                 actions = ['hit', 'stand']
                 
-                if first_action:
+                if first_action or len(self.player_hands) == 1:
                     actions.append('surrender')
                 
                 if hand.can_double and self.player_money >= hand.bet:
@@ -363,7 +373,7 @@ class BlackjackGame:
                 elif action == 'stand':
                     break
                 
-                elif action == 'surrender' and first_action:
+                elif action == 'surrender' and 'surrender' in actions:
                     if self.player_actions.surrender(hand):
                         break
                 
@@ -373,7 +383,9 @@ class BlackjackGame:
                 
                 elif action == 'split' and 'split' in actions:
                     if self.player_actions.split(hand_index):
-                        break
+                        # Continue playing the current hand (don't break)
+                        # The split method already dealt one card to each hand
+                        first_action = False  # Reset first_action to show hands on next iteration
                 
                 else:
                     print("Invalid action!")
@@ -381,6 +393,11 @@ class BlackjackGame:
                 first_action = False
             
             hand_index += 1
+            
+            # Show hands when transitioning to next hand (if there is one)
+            if hand_index < len(self.player_hands):
+                self.current_hand_index = hand_index
+                self.show_hands()
     
     
     
@@ -391,6 +408,7 @@ class BlackjackGame:
             return False
         
         bet = self.game_flow.place_bet()
+        self.player_money -= bet
         
         self.game_flow.deal_initial_cards()
         self.player_hands[0].bet = bet
@@ -410,12 +428,13 @@ class BlackjackGame:
             
             if self.player_hands[0].is_blackjack():
                 print("Both have BLACKJACK! It's a push!")
+                self.player_money += bet  # Return the bet
             else:
                 print("You lose!")
-                self.player_money -= bet
+                # Bet was already deducted, no additional action needed
         elif self.player_hands[0].is_blackjack():
             print("BLACKJACK! You win!")
-            self.player_money += int(bet * 1.5)
+            self.player_money += bet + int(bet * 1.5)  # Return bet + winnings
         else:
             self.player_turn()
             
